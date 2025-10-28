@@ -13,22 +13,21 @@ import { StatusController } from './common/status.controller';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        // ADD THIS DEBUG CODE
-        console.log('🔍 DATABASE CONFIGURATION:');
-        console.log('DB_HOST:', configService.get('DB_HOST'));
-        console.log('DB_PORT:', configService.get('DB_PORT'));
-        console.log('DB_USERNAME:', configService.get('DB_USERNAME'));
-        console.log('DB_NAME:', configService.get('DB_NAME'));
-        console.log('DB_PASSWORD present:', !!configService.get('DB_PASSWORD'));
-        console.log('NODE_ENV:', configService.get('NODE_ENV'));
-
+        // Use direct Railway MySQL variables
+        console.log('🔍 CHECKING RAILWAY VARIABLES:');
+        console.log('MYSQLHOST:', process.env.MYSQLHOST);
+        console.log('MYSQLPORT:', process.env.MYSQLPORT);
+        console.log('MYSQLUSER:', process.env.MYSQLUSER);
+        console.log('MYSQLDATABASE:', process.env.MYSQLDATABASE);
+        console.log('MYSQLPASSWORD present:', !!process.env.MYSQLPASSWORD);
+        
         return {
           type: 'mysql',
-          host: configService.get('DB_HOST'),
-          port: +configService.get('DB_PORT'),
-          username: configService.get('DB_USERNAME'),
-          password: configService.get('DB_PASSWORD'),
-          database: configService.get('DB_NAME'),
+          host: process.env.MYSQLHOST,
+          port: +configService.get('MYSQLPORT', '3306'),
+          username: process.env.MYSQLUSER,
+          password: process.env.MYSQLPASSWORD,
+          database: process.env.MYSQLDATABASE,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.get('NODE_ENV') !== 'production',
         };
@@ -39,4 +38,4 @@ import { StatusController } from './common/status.controller';
   ],
   controllers: [StatusController],
 })
-export class AppModule { }
+export class AppModule {}
