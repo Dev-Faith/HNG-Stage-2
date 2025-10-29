@@ -25,7 +25,7 @@ import { StatusController } from './common/status.controller';
             password: url.password,
             database: url.pathname.replace('/', ''),
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: false,
+            synchronize: true, // ← CHANGE THIS TO TRUE
             retryAttempts: 5,
             autoLoadEntities: true,
             ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
