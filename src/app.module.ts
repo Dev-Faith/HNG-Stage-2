@@ -13,23 +13,35 @@ import { StatusController } from './common/status.controller';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        // Use direct Railway MySQL variables
-        console.log('🔍 CHECKING RAILWAY VARIABLES:');
-        console.log('MYSQLHOST:', process.env.MYSQLHOST);
-        console.log('MYSQLPORT:', process.env.MYSQLPORT);
-        console.log('MYSQLUSER:', process.env.MYSQLUSER);
-        console.log('MYSQLDATABASE:', process.env.MYSQLDATABASE);
-        console.log('MYSQLPASSWORD present:', !!process.env.MYSQLPASSWORD);
+        // Automatic Railway detection - try multiple variable patterns
+        const host = process.env.MYSQLHOST || configService.get('MYSQLHOST') || 'localhost';
+        const port = process.env.MYSQLPORT || configService.get('MYSQLPORT') || '3306';
+        const username = process.env.MYSQLUSER || configService.get('MYSQLUSER') || 'root';
+        const password = process.env.MYSQLPASSWORD || configService.get('MYSQLPASSWORD') || '';
+        const database = process.env.MYSQLDATABASE || configService.get('MYSQLDATABASE') || 'default_db';
+        
+        // Debug output
+        console.log('🔍 DATABASE CONFIGURATION:');
+        console.log('Host:', host);
+        console.log('Port:', port);
+        console.log('Username:', username);
+        console.log('Database:', database);
+        console.log('Password present:', !!password);
+        console.log('NODE_ENV:', configService.get('NODE_ENV'));
         
         return {
           type: 'mysql',
-          host: process.env.MYSQLHOST,
-          port: +configService.get('MYSQLPORT', '3306'),
-          username: process.env.MYSQLUSER,
-          password: process.env.MYSQLPASSWORD,
-          database: process.env.MYSQLDATABASE,
+          host,
+          port: +port,
+          username,
+          password,
+          database,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.get('NODE_ENV') !== 'production',
+          // Better connection settings for Railway
+          retryAttempts: 3,
+          retryDelay: 3000,
+          autoLoadEntities: true,
         };
       },
       inject: [ConfigService],
