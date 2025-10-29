@@ -12,16 +12,15 @@ import { StatusController } from './common/status.controller';
     }),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
-        // Render provides PostgreSQL DATABASE_URL automatically
         const databaseUrl = process.env.DATABASE_URL;
-        
-        if (databaseUrl) {
-          console.log('🚀 Using Render PostgreSQL DATABASE_URL');
+
+        if (databaseUrl && databaseUrl.includes('postgres')) {
+          console.log('🚀 Using PostgreSQL');
           const url = new URL(databaseUrl);
           return {
-            type: 'postgres', // Changed from 'mysql' to 'postgres'
+            type: 'postgres',
             host: url.hostname,
-            port: +url.port || 5432, // PostgreSQL default port
+            port: +url.port || 5432,
             username: url.username,
             password: url.password,
             database: url.pathname.replace('/', ''),
@@ -33,15 +32,15 @@ import { StatusController } from './common/status.controller';
           };
         }
 
-        // Local development (MySQL)
-        console.log('🔧 Using local MySQL development config');
+        // Fallback to MySQL (for local development)
+        console.log('🔧 Using MySQL for local development');
         return {
           type: 'mysql',
-          host: 'localhost',
-          port: 3306,
-          username: 'root',
-          password: '',
-          database: 'country_api',
+          host: process.env.MYSQLHOST || 'localhost',
+          port: +(process.env.MYSQLPORT || 3306),
+          username: process.env.MYSQLUSER || 'root',
+          password: process.env.MYSQLPASSWORD || '',
+          database: process.env.MYSQLDATABASE || 'country_api',
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: true,
           autoLoadEntities: true,
@@ -52,4 +51,4 @@ import { StatusController } from './common/status.controller';
   ],
   controllers: [StatusController],
 })
-export class AppModule {}
+export class AppModule { }
