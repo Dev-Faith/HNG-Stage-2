@@ -12,7 +12,7 @@ import { StatusController } from './common/status.controller';
     }),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
-        const databaseUrl = process.env.DATABASE_URL;
+        const databaseUrl = "mysql://root:SPmKEMIotbqrHTCoLoSIptVCqHTmqjkO@switchyard.proxy.rlwy.net:17492/railway";
 
         if (databaseUrl && databaseUrl.includes('postgres')) {
           console.log('🚀 Using PostgreSQL');
