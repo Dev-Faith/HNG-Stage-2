@@ -13,86 +13,50 @@ import { StatusController } from './common/status.controller';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        // DEBUG: First, let's see what's actually available
-        console.log('🔍 SCANNING FOR DATABASE VARIABLES:');
-        const envVars = ['MYSQLHOST', 'MYSQLPORT', 'MYSQLUSER', 'MYSQLPASSWORD', 'MYSQLDATABASE', 'DATABASE_URL'];
+        // DEBUG: Check EXACT variable names from Railway
+        console.log('🔍 CHECKING RAILWAY VARIABLES:');
+        console.log('MYSQLDATABASE:', process.env.MYSQLDATABASE || 'NOT SET');
+        console.log('MYSQLHOST:', process.env.MYSQLHOST || 'NOT SET');
+        console.log('MYSQLPASSWORD:', process.env.MYSQLPASSWORD ? '***SET***' : 'NOT SET');
+        console.log('MYSQLPORT:', process.env.MYSQLPORT || 'NOT SET');
+        console.log('MYSQLUSER:', process.env.MYSQLUSER || 'NOT SET');
+        console.log('DATABASE_URL:', process.env.DATABASE_URL || 'NOT SET');
 
-        envVars.forEach(varName => {
-          const value = process.env[varName];
-          console.log(`   ${varName}: ${value ? 'SET' : 'NOT SET'}`);
-        });
-
-        // 1. Try DATABASE_URL first (no fallback!)
-        const databaseUrl = process.env.DATABASE_URL;
-        if (databaseUrl) {
-          console.log('🚀 Using DATABASE_URL from process.env');
-          try {
-            const url = new URL(databaseUrl);
-            return {
-              type: 'mysql',
-              host: url.hostname,
-              port: +url.port || 3306,
-              username: url.username,
-              password: url.password,
-              database: url.pathname.replace('/', ''),
-              entities: [__dirname + '/**/*.entity{.ts,.js}'],
-              synchronize: process.env.NODE_ENV !== 'production',
-              retryAttempts: 5,
-              retryDelay: 3000,
-              autoLoadEntities: true,
-            };
-          } catch (error) {
-            console.error('❌ Failed to parse DATABASE_URL');
-          }
-        }
-
-        // 2. Check if ALL required MySQL variables are present (NO FALLBACKS!)
+        // Use the EXACT variable names from Railway
         const host = process.env.MYSQLHOST;
         const port = process.env.MYSQLPORT;
         const username = process.env.MYSQLUSER;
         const password = process.env.MYSQLPASSWORD;
         const database = process.env.MYSQLDATABASE;
 
-        console.log('📊 DIRECT ENV VARIABLE CHECK:');
-        console.log('   MYSQLHOST:', host || 'NOT SET');
-        console.log('   MYSQLPORT:', port || 'NOT SET');
-        console.log('   MYSQLUSER:', username || 'NOT SET');
-        console.log('   MYSQLDATABASE:', database || 'NOT SET');
-        console.log('   MYSQLPASSWORD:', password ? '***SET***' : 'NOT SET');
-
-        // Only use MySQL vars if ALL required ones are present
+        // Only use Railway config if ALL variables are present
         if (host && port && username && database) {
-          console.log('✅ Using MYSQL* environment variables');
+          console.log('✅ USING RAILWAY MYSQL CONFIGURATION');
+          console.log(`   Connecting to: ${username}@${host}:${port}/${database}`);
+
           return {
             type: 'mysql',
             host,
             port: +port,
             username,
-            password, // password can be empty
+            password,
             database,
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: process.env.NODE_ENV !== 'production',
+            synchronize: false, // Always false in production
             retryAttempts: 5,
             retryDelay: 3000,
             autoLoadEntities: true,
+            connectTimeout: 60000,
+            acquireTimeout: 60000,
           };
         }
 
-        // 3. Fallback to local development ONLY if no production vars found
-        console.log('🔧 Using local development fallback');
-        return {
-          type: 'mysql',
-          host: 'localhost',
-          port: 3306,
-          username: 'root',
-          password: '',
-          database: 'country_api',
-          entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true,
-          retryAttempts: 3,
-          retryDelay: 3000,
-          autoLoadEntities: true,
-        };
+        // If Railway variables are missing, throw error (don't fallback locally)
+        console.error('❌ MISSING RAILWAY DATABASE VARIABLES');
+        console.error('Required: MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLDATABASE');
+        console.error('Found:', { host, port, username, database });
+
+        throw new Error('Railway database configuration is incomplete. Check service connection and variable names.');
       },
       inject: [ConfigService],
     }),
